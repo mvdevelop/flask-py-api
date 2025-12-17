@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <link rel="shortcut icon" href="#" type="image/x-icon">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <title>Py-Store View</title>
+</head>
+
+<body>
+
+    <header class="bg-gray-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+
+                <!-- Logo -->
+                <h1 class="text-xl font-bold tracking-wide">
+                    Py-Store View
+                </h1>
+
+                <!-- Menu Desktop -->
+                <nav class="hidden md:flex space-x-6">
+                    <a href="#" class="hover:text-indigo-400 transition">Home</a>
+                    <a href="#" class="hover:text-indigo-400 transition">Produtos</a>
+                    <a href="#" class="hover:text-indigo-400 transition">Categorias</a>
+                    <a href="#" class="hover:text-indigo-400 transition">Contato</a>
+                </nav>
+
+                <!-- Ações -->
+                <div class="flex items-center space-x-4">
+
+                    <!-- Carrinho -->
+                    <button class="relative hover:text-indigo-400 transition">
+                        🛒
+                        <span class="absolute -top-2 -right-2 bg-red-600 text-xs px-1 rounded-full">
+                            2
+                        </span>
+                    </button>
+
+                    <!-- Menu Mobile -->
+                    <button class="md:hidden focus:outline-none"
+                        onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                        ☰
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Mobile -->
+        <div id="mobile-menu" class="hidden md:hidden bg-gray-800">
+            <nav class="px-4 py-3 space-y-2">
+                <a href="#" class="block hover:text-indigo-400">Home</a>
+                <a href="#" class="block hover:text-indigo-400">Produtos</a>
+                <a href="#" class="block hover:text-indigo-400">Categorias</a>
+                <a href="#" class="block hover:text-indigo-400">Contato</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="bg-gray-100 text-black min-h-screen py-10">
+        <div class="max-w-7xl mx-auto px-4">
+
+            <!-- Título -->
+            <h2 class="text-3xl font-bold mb-8 border-b border-gray-800 pb-2">
+                Lista de Produtos
+            </h2>
+
+            <!-- Grid de Produtos -->
+            <div id="produtos" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Exemplo de Card (gerado via JS depois) -->
+                <!--
+      <div class="bg-gray-900 rounded-xl shadow-lg p-4 hover:scale-105 transition">
+        <img
+          src="https://via.placeholder.com/300"
+          alt="Produto"
+          class="rounded-lg mb-4 w-full h-48 object-cover"
+        />
+        <h3 class="text-lg font-semibold">Nome do Produto</h3>
+        <p class="text-sm text-gray-400 mb-2">Descrição curta do produto</p>
+        <div class="flex items-center justify-between">
+          <span class="text-indigo-400 font-bold text-lg">R$ 99,90</span>
+          <button class="bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg text-sm">
+            Comprar
+          </button>
+        </div>
+      </div>
+      -->
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-950 text-gray-400 mt-16">
+        <div class="max-w-7xl mx-auto px-4 py-10">
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+
+                <!-- Marca -->
+                <div>
+                    <h3 class="text-white text-lg font-bold mb-3">
+                        Py-Store View
+                    </h3>
+                    <p class="text-sm">
+                        Sua loja online focada em produtos para desenvolvedores.
+                    </p>
+                </div>
+
+                <!-- Institucional -->
+                <div>
+                    <h4 class="text-white font-semibold mb-3">Institucional</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-indigo-400">Sobre nós</a></li>
+                        <li><a href="#" class="hover:text-indigo-400">Política de Privacidade</a></li>
+                        <li><a href="#" class="hover:text-indigo-400">Termos de Uso</a></li>
+                    </ul>
+                </div>
+
+                <!-- Atendimento -->
+                <div>
+                    <h4 class="text-white font-semibold mb-3">Atendimento</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="hover:text-indigo-400">Contato</a></li>
+                        <li><a href="#" class="hover:text-indigo-400">Suporte</a></li>
+                        <li><a href="#" class="hover:text-indigo-400">Trocas e Devoluções</a></li>
+                    </ul>
+                </div>
+
+                <!-- Redes Sociais -->
+                <div>
+                    <h4 class="text-white font-semibold mb-3">Siga-nos</h4>
+                    <div class="flex space-x-4 text-xl">
+                        <a href="#" class="hover:text-indigo-400">🌐</a>
+                        <a href="#" class="hover:text-indigo-400">📘</a>
+                        <a href="#" class="hover:text-indigo-400">📸</a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Linha inferior -->
+            <div class="border-t border-gray-800 mt-8 pt-4 text-center text-sm">
+                © 2025 Py-Store View. Todos os direitos reservados.
+            </div>
+
+        </div>
+    </footer>
+
+    <script src="index.js"></script>
+</body>
+
+</html>
