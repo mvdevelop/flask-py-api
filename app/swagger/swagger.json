@@ -1,14 +1,17 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "API de Usuários",
-    "version": "1.0.0",
-    "description": "API Flask MVC com MongoDB"
+    "title": "API de Usuários e Produtos",
+    "version": "1.1.0",
+    "description": "API Flask MVC com MongoDB e upload de imagens"
   },
   "host": "localhost:3000",
   "basePath": "/api",
   "schemes": ["http"],
-  "consumes": ["application/json"],
+  "consumes": [
+    "application/json",
+    "multipart/form-data"
+  ],
   "produces": ["application/json"],
   "paths": {
     "/users": {
@@ -19,9 +22,7 @@
             "description": "OK",
             "schema": {
               "type": "array",
-              "items": {
-                "$ref": "#/definitions/User"
-              }
+              "items": { "$ref": "#/definitions/User" }
             }
           }
         }
@@ -33,22 +34,19 @@
             "in": "body",
             "name": "body",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/UserCreate"
-            }
+            "schema": { "$ref": "#/definitions/UserCreate" }
           }
         ],
         "responses": {
           "201": {
             "description": "Usuário criado",
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
+            "schema": { "$ref": "#/definitions/User" }
           },
           "400": { "description": "Dados inválidos" }
         }
       }
     },
+
     "/users/{id}": {
       "put": {
         "summary": "Atualiza usuário",
@@ -63,17 +61,13 @@
           {
             "in": "body",
             "name": "body",
-            "schema": {
-              "$ref": "#/definitions/UserUpdate"
-            }
+            "schema": { "$ref": "#/definitions/UserUpdate" }
           }
         ],
         "responses": {
           "200": {
             "description": "Usuário atualizado",
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
+            "schema": { "$ref": "#/definitions/User" }
           },
           "404": { "description": "Usuário não encontrado" }
         }
@@ -94,8 +88,58 @@
           "404": { "description": "Usuário não encontrado" }
         }
       }
+    },
+
+    "/produtos": {
+      "get": {
+        "summary": "Lista produtos",
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Product" }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria produto com upload de imagem",
+        "consumes": ["multipart/form-data"],
+        "parameters": [
+          {
+            "name": "nome",
+            "in": "formData",
+            "required": true,
+            "type": "string",
+            "example": "Camiseta"
+          },
+          {
+            "name": "descricao",
+            "in": "formData",
+            "required": true,
+            "type": "string",
+            "example": "Camiseta preta tamanho M"
+          },
+          {
+            "name": "img",
+            "in": "formData",
+            "required": true,
+            "type": "file",
+            "description": "Imagem do produto"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Produto criado",
+            "schema": { "$ref": "#/definitions/Product" }
+          },
+          "400": { "description": "Dados inválidos" }
+        }
+      }
     }
   },
+
   "definitions": {
     "User": {
       "type": "object",
@@ -126,6 +170,27 @@
         "name": {
           "type": "string",
           "example": "Novo Nome"
+        }
+      }
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "example": "665f4a8c9c6e4c1c2a123456"
+        },
+        "nome": {
+          "type": "string",
+          "example": "Camiseta"
+        },
+        "descricao": {
+          "type": "string",
+          "example": "Camiseta preta tamanho M"
+        },
+        "img": {
+          "type": "string",
+          "example": "camiseta.jpg"
         }
       }
     }
