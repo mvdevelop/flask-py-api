@@ -1,13 +1,22 @@
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask_swagger_ui import get_swaggerui_blueprint
 from app.routes.user_routes import user_routes
 
 def create_app():
     app = Flask(__name__)
 
+    # 🔹 Rota inicial
+    @app.route("/", methods=["GET"])
+    def index():
+        return jsonify({
+            "message": "API rodando 🚀"
+        })
+
+    # 🔹 Rotas da API
     app.register_blueprint(user_routes, url_prefix="/api")
 
+    # 🔹 Swagger
     SWAGGER_URL = "/swagger"
     API_URL = "/static/swagger.json"
 

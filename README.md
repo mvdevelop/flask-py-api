@@ -54,6 +54,7 @@ pip install -r requirements.txt
 bash
 Copiar código
 python run.py
+
 A aplicação estará disponível em:
 
 arduino

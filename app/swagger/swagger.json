@@ -3,7 +3,7 @@
   "info": {
     "title": "API de Usuários",
     "version": "1.0.0",
-    "description": "API Flask MVC com Swagger"
+    "description": "API Flask MVC com MongoDB"
   },
   "host": "localhost:3000",
   "basePath": "/api",
@@ -15,7 +15,15 @@
       "get": {
         "summary": "Lista usuários",
         "responses": {
-          "200": { "description": "OK" }
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          }
         }
       },
       "post": {
@@ -24,17 +32,19 @@
           {
             "in": "body",
             "name": "body",
+            "required": true,
             "schema": {
-              "type": "object",
-              "required": ["name"],
-              "properties": {
-                "name": { "type": "string", "example": "Carlos" }
-              }
+              "$ref": "#/definitions/UserCreate"
             }
           }
         ],
         "responses": {
-          "201": { "description": "Usuário criado" },
+          "201": {
+            "description": "Usuário criado",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
           "400": { "description": "Dados inválidos" }
         }
       }
@@ -47,21 +57,24 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "integer"
+            "type": "string",
+            "example": "665f3c8f9c6e4c1c2a123456"
           },
           {
             "in": "body",
             "name": "body",
             "schema": {
-              "type": "object",
-              "properties": {
-                "name": { "type": "string", "example": "Novo Nome" }
-              }
+              "$ref": "#/definitions/UserUpdate"
             }
           }
         ],
         "responses": {
-          "200": { "description": "Usuário atualizado" },
+          "200": {
+            "description": "Usuário atualizado",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
           "404": { "description": "Usuário não encontrado" }
         }
       },
@@ -72,12 +85,47 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "integer"
+            "type": "string",
+            "example": "665f3c8f9c6e4c1c2a123456"
           }
         ],
         "responses": {
           "200": { "description": "Usuário removido" },
           "404": { "description": "Usuário não encontrado" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string",
+          "example": "665f3c8f9c6e4c1c2a123456"
+        },
+        "name": {
+          "type": "string",
+          "example": "Carlos"
+        }
+      }
+    },
+    "UserCreate": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "example": "Carlos"
+        }
+      }
+    },
+    "UserUpdate": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "example": "Novo Nome"
         }
       }
     }
