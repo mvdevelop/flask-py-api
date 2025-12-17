@@ -7,10 +7,8 @@ from app.models.product_model import ProductModel
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
-
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 class ProductController:
 
@@ -36,7 +34,8 @@ class ProductController:
         file.save(filepath)
 
         # 🔹 MONTA URL PÚBLICA DA IMAGEM
-        image_url = f"http://localhost:3000/uploads/produtos/{filename}"
+        image_url = f"https://flask-py-api.onrender.com//uploads/produtos/{filename}"
+        #image_url = f"http://localhost:3000/uploads/produtos/{filename}"
 
         product = ProductModel.create({
             "nome": nome,

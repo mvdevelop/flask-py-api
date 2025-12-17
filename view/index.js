@@ -1,5 +1,6 @@
 
-const API_URL = "http://localhost:3000/api/produtos";
+const renderUrl = "https://flask-py-api.onrender.com/";
+const API_URL = `${renderUrl}api/produtos`;
 
 async function carregarProdutos() {
   try {
