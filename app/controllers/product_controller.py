@@ -2,9 +2,11 @@
 from flask import request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import os
+import uuid
 from app.models.product_model import ProductModel
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -24,14 +26,22 @@ class ProductController:
         if not allowed_file(file.filename):
             return jsonify({"error": "Formato de imagem inválido"}), 400
 
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+        # 🔹 Gera nome único para evitar sobrescrita
+        ext = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{ext}"
+
+        filename = secure_filename(unique_filename)
+        upload_folder = current_app.config["UPLOAD_FOLDER"]
+        filepath = os.path.join(upload_folder, filename)
         file.save(filepath)
+
+        # 🔹 MONTA URL PÚBLICA DA IMAGEM
+        image_url = f"http://localhost:3000/uploads/produtos/{filename}"
 
         product = ProductModel.create({
             "nome": nome,
             "descricao": descricao,
-            "img": filename
+            "img": image_url  # 👈 agora é URL
         })
 
         return jsonify(product), 201

@@ -13,6 +13,7 @@
     "multipart/form-data"
   ],
   "produces": ["application/json"],
+
   "paths": {
     "/users": {
       "get": {
@@ -154,6 +155,7 @@
         }
       }
     },
+
     "UserCreate": {
       "type": "object",
       "required": ["name"],
@@ -164,6 +166,7 @@
         }
       }
     },
+
     "UserUpdate": {
       "type": "object",
       "properties": {
@@ -173,6 +176,7 @@
         }
       }
     },
+
     "Product": {
       "type": "object",
       "properties": {
@@ -190,7 +194,7 @@
         },
         "img": {
           "type": "string",
-          "example": "camiseta.jpg"
+          "example": "http://localhost:3000/uploads/produtos/3b9c2c8e.webp"
         }
       }
     }

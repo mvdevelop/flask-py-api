@@ -1,12 +1,21 @@
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_swagger_ui import get_swaggerui_blueprint
+from flask_cors import CORS
 from app.routes.user_routes import user_routes
 from app.routes.product_routes import product_routes
 import os
 
 def create_app():
     app = Flask(__name__)
+
+    # 🔓 CORS TOTALMENTE ABERTO
+    CORS(
+        app,
+        resources={r"/*": {"origins": "*"}},
+        allow_headers="*",
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    )
 
     # 🔹 Configuração de upload
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +30,14 @@ def create_app():
     @app.route("/", methods=["GET"])
     def index():
         return jsonify({"message": "API rodando 🚀"})
+
+    # 🔹 Rota pública para servir imagens
+    @app.route("/uploads/produtos/<filename>")
+    def serve_product_image(filename):
+        return send_from_directory(
+            app.config["UPLOAD_FOLDER"],
+            filename
+        )
 
     # 🔹 Rotas da API
     app.register_blueprint(user_routes, url_prefix="/api")
