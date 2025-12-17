@@ -2,12 +2,18 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from app.routes.user_routes import user_routes
 from app.routes.product_routes import product_routes
+from app.routes.admin_routes import admin_routes
 import os
 
 def create_app():
     app = Flask(__name__)
+
+    # 🔐 JWT (Admin Auth)
+    app.config["JWT_SECRET_KEY"] = "super-secret-admin-key"
+    JWTManager(app)
 
     # 🔓 CORS TOTALMENTE ABERTO
     CORS(
@@ -42,6 +48,7 @@ def create_app():
     # 🔹 Rotas da API
     app.register_blueprint(user_routes, url_prefix="/api")
     app.register_blueprint(product_routes, url_prefix="/api")
+    app.register_blueprint(admin_routes, url_prefix="/api")
 
     # 🔹 Swagger
     SWAGGER_URL = "/swagger"
@@ -50,7 +57,7 @@ def create_app():
     swaggerui_blueprint = get_swaggerui_blueprint(
         SWAGGER_URL,
         API_URL,
-        config={"app_name": "API de Usuários e Produtos"}
+        config={"app_name": "API de Usuários, Produtos e Admin"}
     )
 
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)

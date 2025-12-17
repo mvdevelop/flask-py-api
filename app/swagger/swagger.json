@@ -1,9 +1,9 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "API de Usuários e Produtos",
-    "version": "1.1.0",
-    "description": "API Flask MVC com MongoDB e upload de imagens"
+    "title": "API de Usuários, Produtos e Admin",
+    "version": "1.2.0",
+    "description": "API Flask MVC com MongoDB, upload de imagens e autenticação JWT para painel admin"
   },
   "host": "localhost:3000",
   "basePath": "/api",
@@ -14,7 +14,42 @@
   ],
   "produces": ["application/json"],
 
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Informe o token no formato: Bearer SEU_TOKEN"
+    }
+  },
+
   "paths": {
+    "/user_admin/login": {
+      "post": {
+        "summary": "Login do administrador",
+        "description": "Autenticação do painel admin",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AdminLogin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso",
+            "schema": {
+              "$ref": "#/definitions/AdminAuthResponse"
+            }
+          },
+          "401": { "description": "Credenciais inválidas" }
+        }
+      }
+    },
+
     "/users": {
       "get": {
         "summary": "Lista usuários",
@@ -51,13 +86,13 @@
     "/users/{id}": {
       "put": {
         "summary": "Atualiza usuário",
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string",
-            "example": "665f3c8f9c6e4c1c2a123456"
+            "type": "string"
           },
           {
             "in": "body",
@@ -75,13 +110,13 @@
       },
       "delete": {
         "summary": "Remove usuário",
+        "security": [{ "BearerAuth": [] }],
         "parameters": [
           {
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string",
-            "example": "665f3c8f9c6e4c1c2a123456"
+            "type": "string"
           }
         ],
         "responses": {
@@ -106,53 +141,80 @@
       },
       "post": {
         "summary": "Cria produto com upload de imagem",
+        "security": [{ "BearerAuth": [] }],
         "consumes": ["multipart/form-data"],
         "parameters": [
           {
             "name": "nome",
             "in": "formData",
             "required": true,
-            "type": "string",
-            "example": "Camiseta"
+            "type": "string"
           },
           {
             "name": "descricao",
             "in": "formData",
             "required": true,
-            "type": "string",
-            "example": "Camiseta preta tamanho M"
+            "type": "string"
           },
           {
             "name": "img",
             "in": "formData",
             "required": true,
-            "type": "file",
-            "description": "Imagem do produto"
+            "type": "file"
           }
         ],
         "responses": {
           "201": {
             "description": "Produto criado",
             "schema": { "$ref": "#/definitions/Product" }
-          },
-          "400": { "description": "Dados inválidos" }
+          }
         }
       }
     }
   },
 
   "definitions": {
+    "AdminLogin": {
+      "type": "object",
+      "required": ["email", "password"],
+      "properties": {
+        "email": {
+          "type": "string",
+          "example": "admin@email.com"
+        },
+        "password": {
+          "type": "string",
+          "example": "123456"
+        }
+      }
+    },
+
+    "AdminAuthResponse": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        },
+        "admin": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+
     "User": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string",
-          "example": "665f3c8f9c6e4c1c2a123456"
-        },
-        "name": {
-          "type": "string",
-          "example": "Carlos"
-        }
+        "_id": { "type": "string" },
+        "name": { "type": "string" }
       }
     },
 
@@ -160,41 +222,26 @@
       "type": "object",
       "required": ["name"],
       "properties": {
-        "name": {
-          "type": "string",
-          "example": "Carlos"
-        }
+        "name": { "type": "string" }
       }
     },
 
     "UserUpdate": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string",
-          "example": "Novo Nome"
-        }
+        "name": { "type": "string" }
       }
     },
 
     "Product": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string",
-          "example": "665f4a8c9c6e4c1c2a123456"
-        },
-        "nome": {
-          "type": "string",
-          "example": "Camiseta"
-        },
-        "descricao": {
-          "type": "string",
-          "example": "Camiseta preta tamanho M"
-        },
+        "_id": { "type": "string" },
+        "nome": { "type": "string" },
+        "descricao": { "type": "string" },
         "img": {
           "type": "string",
-          "example": "http://localhost:3000/uploads/produtos/3b9c2c8e.webp"
+          "example": "http://localhost:3000/uploads/produtos/arquivo.webp"
         }
       }
     }
