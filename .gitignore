@@ -1,5 +1,40 @@
 
+# Ambiente virtual
+venv/
+.venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Arquivos de ambiente
 .env
-uploads
-__pycache__
-venv
+.env.local
+.env.*.local
+
+# Testes
+test/
+tests/
+*.test.py
+
+# Uploads locais (mantemos vazio no container)
+uploads/**          # Importante: não copiar uploads locais
+!uploads/produtos/  # Mas cria a estrutura de pastas
