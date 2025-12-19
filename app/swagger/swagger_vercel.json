@@ -1,0 +1,47 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PyStore API - Vercel",
+    "version": "1.0.0",
+    "description": "API na Vercel - Use JSON com 'image_url' em vez de upload"
+  },
+  "host": "py-store-api.vercel.app",
+  "basePath": "/api",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  
+  "paths": {
+    "/produtos": {
+      "post": {
+        "summary": "Cria produto (Vercel)",
+        "description": "Na Vercel, use JSON com 'image_url'",
+        "consumes": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nome": {"type": "string"},
+                "descricao": {"type": "string"},
+                "image_url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "URL da imagem externa"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Produto criado com URL"
+          }
+        }
+      }
+    }
+  }
+}

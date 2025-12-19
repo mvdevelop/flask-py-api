@@ -1,29 +1,71 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "API de Usuários, Produtos e Admin",
-    "version": "1.2.0",
-    "description": "API Flask MVC com MongoDB, upload de imagens e autenticação JWT para painel admin"
+    "title": "PyStore API - Vercel Deployment",
+    "version": "2.0.0",
+    "description": "API Flask com MongoDB Atlas. Na Vercel, use JSON com 'image_url' em vez de upload de arquivos.",
+    "contact": {
+      "email": "seu-email@exemplo.com"
+    },
+    "license": {
+      "name": "MIT"
+    }
   },
-  "host": "localhost:3000",
+  "host": "py-store-api.vercel.app", 
   "basePath": "/api",
-  "schemes": ["http"],
-  "consumes": [
-    "application/json",
-    "multipart/form-data"
-  ],
+  "schemes": ["https"],  
+  "consumes": ["application/json"],  
   "produces": ["application/json"],
-
+  
   "securityDefinitions": {
     "BearerAuth": {
       "type": "apiKey",
       "name": "Authorization",
       "in": "header",
-      "description": "Informe o token no formato: Bearer SEU_TOKEN"
+      "description": "Token JWT no formato: Bearer {token}"
     }
   },
 
   "paths": {
+    "/": {
+      "get": {
+        "summary": "Raiz da API",
+        "description": "Informações sobre a API e status",
+        "responses": {
+          "200": {
+            "description": "API online",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "status": { "type": "string" },
+                "database": { "type": "string" },
+                "environment": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Verifica status da API e conexão com banco",
+        "responses": {
+          "200": {
+            "description": "API saudável",
+            "schema": {
+              "$ref": "#/definitions/HealthResponse"
+            }
+          },
+          "503": {
+            "description": "API com problemas"
+          }
+        }
+      }
+    },
+
     "/user_admin/login": {
       "post": {
         "summary": "Login do administrador",
@@ -65,6 +107,7 @@
       },
       "post": {
         "summary": "Cria usuário",
+        "description": "Cria um novo usuário",
         "parameters": [
           {
             "in": "body",
@@ -92,7 +135,8 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "description": "ID do usuário"
           },
           {
             "in": "body",
@@ -116,7 +160,8 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "description": "ID do usuário"
           }
         ],
         "responses": {
@@ -129,44 +174,126 @@
     "/produtos": {
       "get": {
         "summary": "Lista produtos",
+        "description": "Retorna lista de produtos com paginação",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "description": "Número máximo de produtos (padrão: 20, máximo: 50)",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 50
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "type": "integer",
+            "description": "Número da página",
+            "default": 1
+          }
+        ],
         "responses": {
           "200": {
             "description": "Lista de produtos",
             "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Product" }
+              "$ref": "#/definitions/ProductListResponse"
             }
           }
         }
       },
       "post": {
-        "summary": "Cria produto com upload de imagem",
+        "summary": "Cria produto",
+        "description": "Cria um novo produto. Na Vercel, use 'image_url' em vez de upload de arquivo.",
         "security": [{ "BearerAuth": [] }],
-        "consumes": ["multipart/form-data"],
+        "consumes": ["application/json"], 
         "parameters": [
           {
-            "name": "nome",
-            "in": "formData",
+            "in": "body",
+            "name": "body",
             "required": true,
-            "type": "string"
-          },
-          {
-            "name": "descricao",
-            "in": "formData",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "img",
-            "in": "formData",
-            "required": true,
-            "type": "file"
+            "schema": { 
+              "$ref": "#/definitions/ProductCreateVercel"
+            }
           }
         ],
         "responses": {
           "201": {
             "description": "Produto criado",
             "schema": { "$ref": "#/definitions/Product" }
+          },
+          "400": {
+            "description": "Dados inválidos"
+          },
+          "415": {
+            "description": "Formato não suportado. Use JSON com image_url"
+          }
+        }
+      }
+    },
+
+    "/produtos/{id}": {
+      "get": {
+        "summary": "Obtém produto por ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID do produto"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Produto encontrado",
+            "schema": { "$ref": "#/definitions/Product" }
+          },
+          "404": {
+            "description": "Produto não encontrado"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove produto",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "description": "ID do produto"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Produto removido" },
+          "404": { "description": "Produto não encontrado" }
+        }
+      }
+    },
+
+    "/produtos/upload-url": {
+      "post": {
+        "summary": "Upload de imagem por URL",
+        "description": "Endpoint específico para Vercel - aceita apenas URL de imagem externa",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ImageURLUpload"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "URL da imagem registrada",
+            "schema": {
+              "$ref": "#/definitions/ImageURLResponse"
+            }
           }
         }
       }
@@ -174,16 +301,36 @@
   },
 
   "definitions": {
+    "HealthResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["healthy", "degraded", "unhealthy"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "database": {
+          "type": "string",
+          "enum": ["connected", "disconnected"]
+        }
+      }
+    },
+
     "AdminLogin": {
       "type": "object",
       "required": ["email", "password"],
       "properties": {
         "email": {
           "type": "string",
+          "format": "email",
           "example": "admin@email.com"
         },
         "password": {
           "type": "string",
+          "format": "password",
           "example": "123456"
         }
       }
@@ -192,19 +339,19 @@
     "AdminAuthResponse": {
       "type": "object",
       "properties": {
-        "token": {
+        "access_token": {
           "type": "string",
           "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        },
+        "token_type": {
+          "type": "string",
+          "example": "bearer"
         },
         "admin": {
           "type": "object",
           "properties": {
-            "id": {
-              "type": "string"
-            },
-            "email": {
-              "type": "string"
-            }
+            "id": { "type": "string" },
+            "email": { "type": "string" }
           }
         }
       }
@@ -214,22 +361,43 @@
       "type": "object",
       "properties": {
         "_id": { "type": "string" },
-        "name": { "type": "string" }
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
 
     "UserCreate": {
       "type": "object",
-      "required": ["name"],
+      "required": ["name", "email", "password"],
       "properties": {
-        "name": { "type": "string" }
+        "name": { "type": "string" },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "password": {
+          "type": "string",
+          "format": "password"
+        }
       }
     },
 
     "UserUpdate": {
       "type": "object",
       "properties": {
-        "name": { "type": "string" }
+        "name": { "type": "string" },
+        "email": {
+          "type": "string",
+          "format": "email"
+        }
       }
     },
 
@@ -241,9 +409,180 @@
         "descricao": { "type": "string" },
         "img": {
           "type": "string",
-          "example": "http://localhost:3000/uploads/produtos/arquivo.webp"
+          "format": "uri",
+          "description": "URL da imagem do produto"
+        },
+        "preco": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0
+        },
+        "categoria": { "type": "string" },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["vercel", "docker", "local"],
+          "description": "Ambiente onde o produto foi criado"
+        }
+      }
+    },
+
+    "ProductListResponse": {
+      "type": "object",
+      "properties": {
+        "products": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Product" }
+        },
+        "count": {
+          "type": "integer",
+          "description": "Número de produtos retornados"
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total de produtos no banco"
+        },
+        "page": {
+          "type": "integer",
+          "description": "Página atual"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Limite por página"
+        },
+        "has_more": {
+          "type": "boolean",
+          "description": "Existem mais produtos?"
+        }
+      }
+    },
+
+    "ProductCreateVercel": {
+      "type": "object",
+      "required": ["nome", "descricao"],
+      "properties": {
+        "nome": {
+          "type": "string",
+          "example": "Produto Exemplo"
+        },
+        "descricao": {
+          "type": "string",
+          "example": "Descrição do produto"
+        },
+        "image_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL da imagem (obrigatório na Vercel)",
+          "example": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e"
+        },
+        "preco": {
+          "type": "number",
+          "format": "float",
+          "minimum": 0,
+          "example": 99.90
+        },
+        "categoria": {
+          "type": "string",
+          "example": "eletronicos"
+        }
+      }
+    },
+
+    "ImageURLUpload": {
+      "type": "object",
+      "required": ["image_url"],
+      "properties": {
+        "image_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL completa da imagem",
+          "example": "https://cdn.exemplo.com/imagem.jpg"
+        },
+        "product_id": {
+          "type": "string",
+          "description": "ID do produto para associar a imagem (opcional)"
+        }
+      }
+    },
+
+    "ImageURLResponse": {
+      "type": "object",
+      "properties": {
+        "success": { "type": "boolean" },
+        "message": { "type": "string" },
+        "image_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "storage": {
+          "type": "string",
+          "enum": ["external_url", "local_file"],
+          "description": "Tipo de armazenamento da imagem"
+        },
+        "environment": {
+          "type": "string",
+          "enum": ["vercel", "docker"],
+          "description": "Ambiente onde a imagem foi registrada"
+        }
+      }
+    },
+
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error": { "type": "string" },
+        "message": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+
+    "VercelWarning": {
+      "type": "object",
+      "properties": {
+        "warning": { "type": "string" },
+        "message": { "type": "string" },
+        "solution": { "type": "string" },
+        "recommended_services": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["Cloudinary", "AWS S3", "ImgBB", "Uploadcare"]
         }
       }
     }
-  }
+  },
+
+  "externalDocs": {
+    "description": "Documentação da Vercel para APIs Python",
+    "url": "https://vercel.com/docs/functions/serverless-functions/runtimes/python"
+  },
+
+  "tags": [
+    {
+      "name": "Produtos",
+      "description": "Operações com produtos"
+    },
+    {
+      "name": "Usuários",
+      "description": "Operações com usuários"
+    },
+    {
+      "name": "Admin",
+      "description": "Operações administrativas"
+    },
+    {
+      "name": "Health",
+      "description": "Verificação de status da API"
+    }
+  ]
 }
