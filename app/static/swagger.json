@@ -1,0 +1,88 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PyStore API",
+    "version": "1.0.0",
+    "description": "API Flask para gerenciamento de produtos"
+  },
+  "host": "py-store-api.vercel.app",
+  "basePath": "/api",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "API Status",
+        "responses": {
+          "200": {
+            "description": "API online"
+          }
+        }
+      }
+    },
+    
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "responses": {
+          "200": {
+            "description": "API saudável"
+          }
+        }
+      }
+    },
+    
+    "/produtos": {
+      "get": {
+        "summary": "Lista produtos",
+        "responses": {
+          "200": {
+            "description": "Lista de produtos",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "_id": { "type": "string" },
+                  "nome": { "type": "string" },
+                  "descricao": { "type": "string" },
+                  "img": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      },
+      
+      "post": {
+        "summary": "Cria produto",
+        "description": "Cria novo produto com URL da imagem",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "nome": { "type": "string" },
+                "descricao": { "type": "string" },
+                "image_url": { "type": "string" }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Produto criado"
+          },
+          "400": {
+            "description": "Dados inválidos"
+          }
+        }
+      }
+    }
+  }
+}
