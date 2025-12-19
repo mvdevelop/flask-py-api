@@ -1,0 +1,15 @@
+{
+  "orgId": "YOUR_ORG_ID",
+  "projectId": "prj_YOUR_PROJECT_ID",
+  "settings": {
+    "createdAt": 1702857600000,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": "pip install -r requirements.txt",
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "18.x"
+  }
+}
