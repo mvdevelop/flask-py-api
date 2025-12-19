@@ -38,3 +38,9 @@ tests/
 # Uploads locais (mantemos vazio no container)
 uploads/**          # Importante: não copiar uploads locais
 !uploads/produtos/  # Mas cria a estrutura de pastas
+
+# Adicione estas linhas
+api/index.py
+vercel.json
+.vercel/
+.vercel
