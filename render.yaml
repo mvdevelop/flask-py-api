@@ -1,0 +1,24 @@
+
+services:
+  - type: web
+    name: pystore-api
+    env: docker
+    plan: free
+    region: oregon
+
+    dockerfilePath: ./Dockerfile
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: APP_ENV
+        value: production
+
+      - key: JWT_SECRET_KEY
+        sync: false
+
+      - key: MONGO_URI
+        sync: false
+
+      - key: MONGO_DB
+        value: py_store

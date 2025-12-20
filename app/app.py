@@ -1,87 +1,106 @@
 
-# app/app.py - VERSÃO SIMPLIFICADA
+# app/app.py
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 import os
 import datetime
+import logging
 
-def create_app(config_name='default'):
+# ==============================
+# Logging básico
+# ==============================
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def create_app(config_name="production"):
     """Factory function para criar a aplicação Flask"""
-    
-    print("=" * 60)
-    print(f"🚀 Criando app Flask - Ambiente: {config_name}")
-    print("=" * 60)
-    
-    app = Flask(__name__)
-    
-    # 🔧 CONFIGURAÇÕES
-    app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
-    
-    # 🔐 JWT
-    jwt_secret = os.environ.get("JWT_SECRET_KEY", "dev-secret-key")
-    app.config["JWT_SECRET_KEY"] = jwt_secret
-    JWTManager(app)
-    print(f"🔐 JWT configurado")
 
-    # 🔓 CORS
+    logger.info("=" * 60)
+    logger.info(f"🚀 Criando app Flask - Ambiente: {config_name}")
+    logger.info("=" * 60)
+
+    app = Flask(__name__)
+
+    # ==============================
+    # Configurações
+    # ==============================
+    app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+
+    # ==============================
+    # JWT
+    # ==============================
+    jwt_secret = os.environ.get("JWT_SECRET_KEY")
+
+    if not jwt_secret and config_name == "production":
+        raise RuntimeError("JWT_SECRET_KEY não configurada em produção")
+
+    app.config["JWT_SECRET_KEY"] = jwt_secret or "dev-secret-key"
+    JWTManager(app)
+    logger.info("🔐 JWT configurado")
+
+    # ==============================
+    # CORS
+    # ==============================
     CORS(app, resources={r"/*": {"origins": "*"}})
 
-    # 🗄️ MONGODB - SIMPLIFICADO
+    # ==============================
+    # MongoDB
+    # ==============================
     mongo_uri = os.environ.get("MONGO_URI")
     app.db = None
-    
+
     if mongo_uri:
         try:
             from pymongo import MongoClient
-            print(f"🔗 Conectando ao MongoDB...")
-            
+
+            logger.info("🔗 Conectando ao MongoDB...")
             client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-            client.admin.command('ping')
-            app.db = client[os.environ.get("MONGO_DB", "py_store")]
-            
-            print(f"✅ MongoDB Atlas conectado!")
+            client.admin.command("ping")
+
+            db_name = os.environ.get("MONGO_DB", "py_store")
+            app.db = client[db_name]
+
+            logger.info(f"✅ MongoDB conectado | DB: {db_name}")
         except Exception as e:
-            print(f"⚠️  MongoDB não disponível: {e}")
+            logger.warning(f"⚠️ MongoDB indisponível: {e}")
             app.db = None
     else:
-        print("⚠️  MONGO_URI não configurada")
-        app.db = None
+        logger.warning("⚠️ MONGO_URI não configurada")
 
-    # 🔹 ROTA INICIAL CORRIGIDA
+    # ==============================
+    # Rotas básicas
+    # ==============================
     @app.route("/", methods=["GET"])
     def index():
-        # CORREÇÃO: Use 'app.db is not None' em vez de 'app.db'
-        db_status = "connected" if app.db is not None else "disconnected"
-        
         return jsonify({
             "message": "PyStore API 🚀",
             "status": "online",
-            "database": db_status,
+            "database": "connected" if app.db is not None else "disconnected",
             "environment": config_name,
             "timestamp": datetime.datetime.utcnow().isoformat()
         })
 
-    # 🔹 HEALTH CHECK CORRIGIDO
     @app.route("/health", methods=["GET"])
     def health_check():
-        db_status = "connected" if app.db is not None else "disconnected"
-        
         return jsonify({
             "status": "healthy" if app.db is not None else "degraded",
             "service": "pystore-api",
-            "database": db_status,
+            "database": "connected" if app.db is not None else "disconnected",
             "timestamp": datetime.datetime.utcnow().isoformat()
         })
 
-    # 🔹 ROTAS DA API
+    # ==============================
+    # Rotas da API
+    # ==============================
     try:
         from app.routes.product_routes import product_routes
         app.register_blueprint(product_routes, url_prefix="/api")
-        print("✅ product_routes carregado")
+        logger.info("✅ product_routes carregado")
     except ImportError as e:
-        print(f"⚠️  product_routes não carregado: {e}")
-        
+        logger.warning(f"⚠️ product_routes não carregado: {e}")
+
         @app.route("/api/produtos", methods=["GET"])
         def produtos_fallback():
             return jsonify({
@@ -89,8 +108,8 @@ def create_app(config_name='default'):
                 "message": "Products module not available"
             })
 
-    print("=" * 60)
-    print("✅ Aplicação Flask criada com sucesso!")
-    print("=" * 60)
-    
+    logger.info("=" * 60)
+    logger.info("✅ Aplicação Flask criada com sucesso!")
+    logger.info("=" * 60)
+
     return app
