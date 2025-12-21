@@ -5,35 +5,12 @@
     "version": "1.0.0",
     "description": "API Flask para gerenciamento de produtos"
   },
-  "host": "py-store-api.vercel.app",
+
   "basePath": "/api",
-  "schemes": ["https"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
-  
+
   "paths": {
-    "/": {
-      "get": {
-        "summary": "API Status",
-        "responses": {
-          "200": {
-            "description": "API online"
-          }
-        }
-      }
-    },
-    
-    "/health": {
-      "get": {
-        "summary": "Health Check",
-        "responses": {
-          "200": {
-            "description": "API saudável"
-          }
-        }
-      }
-    },
-    
     "/produtos": {
       "get": {
         "summary": "Lista produtos",
@@ -55,7 +32,6 @@
           }
         }
       },
-      
       "post": {
         "summary": "Cria produto",
         "description": "Cria novo produto com URL da imagem",
@@ -66,6 +42,7 @@
             "required": true,
             "schema": {
               "type": "object",
+              "required": ["nome"],
               "properties": {
                 "nome": { "type": "string" },
                 "descricao": { "type": "string" },

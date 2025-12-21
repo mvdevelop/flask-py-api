@@ -1,14 +1,31 @@
 
+# run.py
 import os
 import sys
 import datetime
-from app.app import create_app
+import logging
 from flask import send_from_directory, jsonify
+from app.app import create_app
 
+# ==============================
+# Ambiente
+# ==============================
 APP_ENV = os.getenv("APP_ENV", "production")
 
+# ==============================
+# Criação do app (ESSENCIAL PARA GUNICORN)
+# ==============================
 app = create_app(APP_ENV)
 
+# ==============================
+# Logging básico
+# ==============================
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# ==============================
+# Swagger dinâmico
+# ==============================
 @app.route("/static/swagger.json")
 def swagger_json():
     """
@@ -17,37 +34,31 @@ def swagger_json():
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        # Decide swagger por ambiente
-        if APP_ENV == "production":
-            filenames = [
-                "swagger_prod.json",
-                "swagger.json"
-            ]
-        else:
-            filenames = [
-                "swagger_local.json",
-                "swagger.json"
-            ]
+        filenames = (
+            ["swagger_prod.json", "swagger.json"]
+            if APP_ENV == "production"
+            else ["swagger_local.json", "swagger.json"]
+        )
 
-        possible_paths = []
         for filename in filenames:
-            possible_paths.extend([
+            possible_paths = [
                 os.path.join(base_dir, "static", filename),
                 os.path.join(base_dir, filename),
                 os.path.join(base_dir, "app", "swagger", filename),
-            ])
+            ]
 
-        for path in possible_paths:
-            if os.path.exists(path):
-                return send_from_directory(
-                    os.path.dirname(path),
-                    os.path.basename(path)
-                )
+            for path in possible_paths:
+                if os.path.exists(path):
+                    return send_from_directory(
+                        os.path.dirname(path),
+                        os.path.basename(path)
+                    )
 
         raise FileNotFoundError("Swagger file not found")
 
-    except Exception:
-        # Fallback mínimo
+    except Exception as e:
+        logger.warning(f"Swagger não encontrado: {e}")
+
         return jsonify({
             "openapi": "3.0.0",
             "info": {
@@ -69,8 +80,10 @@ def swagger_json():
             }
         }), 200
 
-# Execução Local 
 
+# ==============================
+# Execução LOCAL apenas
+# ==============================
 if __name__ == "__main__":
     host = "0.0.0.0"
     port = int(os.getenv("PORT", 5000))
@@ -86,7 +99,7 @@ if __name__ == "__main__":
 
     if APP_ENV == "production":
         print("⚠️  Produção detectada")
-        print("   Use Gunicorn no Render")
+        print("   Em produção use Gunicorn (Render)")
 
     try:
         app.run(
