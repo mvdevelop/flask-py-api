@@ -11,12 +11,6 @@ services:
     healthCheckPath: /health
 
     envVars:
-      - key: APP_ENV
-        value: production
-
-      - key: JWT_SECRET_KEY
-        sync: false
-
       - key: MONGO_URI
         sync: false
 
