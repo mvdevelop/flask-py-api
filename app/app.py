@@ -89,37 +89,17 @@ def create_app(config_name: str = "default") -> Flask:
     init_error_handler(app)
 
     # ==============================
-    # MongoDB
+    # MongoDB — usa camada database/mongo.py (testável)
     # ==============================
-    mongo_uri = app.config.get("MONGO_URI")
-    app.db = None
+    from app.database.mongo import init_db
 
-    if not mongo_uri or mongo_uri == "mongodb://localhost:27017/py_store":
-        env = os.environ.get("FLASK_ENV", "production")
-        if env == "production":
-            raise RuntimeError("MONGO_URI não configurada para produção")
+    # init_db falha com RuntimeError em produção se DB inacessível
+    db = init_db(app)
+    if db is None and os.environ.get("FLASK_ENV", "production") == "production":
+        raise RuntimeError("MongoDB não conectado em produção")
 
-    try:
-        from pymongo import MongoClient
-
-        client = MongoClient(
-            mongo_uri,
-            serverSelectionTimeoutMS=5000,
-            maxPoolSize=50,
-            minPoolSize=5,
-            appname="PyStore-API",
-        )
-        client.admin.command("ping")
-
-        db_name = app.config.get("MONGO_DB", "py_store")
-        app.db = client[db_name]
-        app.mongo_client = client
-
-        logger.info(f"MongoDB conectado | DB: {db_name}")
-
-    except Exception as e:
-        logger.error(f"Falha ao conectar MongoDB: {type(e).__name__}")
-        raise RuntimeError("Database connection failed") from e
+    app.db = db
+    logger.info("MongoDB configurado no app")
 
     # ==============================
     # Rotas básicas

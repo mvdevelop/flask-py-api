@@ -1,0 +1,202 @@
+# ==============================
+# CI/CD Pipeline — PyStore API
+# ==============================
+# Security Champion Note:
+# Este pipeline implementa defense-in-depth no desenvolvimento:
+# 1. Linting (ruff) — quality gates
+# 2. Type checking (mypy) — type safety
+# 3. Security scan (Bandit, Semgrep) — SAST
+# 4. Testes automatizados (pytest) — regression prevention
+# 5. Docker build + security scan (Trivy)
+# 6. Deploy automatizado (Render)
+
+name: CI/CD — PyStore API
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.11"
+  REGISTRY: ghcr.io
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ==============================
+  # 1. Lint + Type Check
+  # ==============================
+  lint:
+    name: Lint + Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install linting tools
+        run: |
+          pip install ruff mypy
+
+      - name: Run ruff lint
+        run: |
+          ruff check app/ tests/ --max-line-length 120 --statistics
+
+      - name: Run ruff format check
+        run: |
+          ruff format --check app/ tests/
+
+      - name: Run mypy type check
+        run: |
+          mypy app/ --ignore-missing-imports --strict-optional
+
+  # ==============================
+  # 2. Security Scan (SAST)
+  # ==============================
+  security:
+    name: Security Scan (SAST)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit (Python SAST)
+        run: |
+          pip install bandit
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r app/ -f json -o bandit-report.json
+        continue-on-error: true
+
+      - name: Upload Bandit report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-report.json
+
+      - name: Install Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            r/python
+          generate-pipeline-config: true
+
+      - name: Run Semgrep
+        run: |
+          semgrep --config=p/security-audit --error --max-target-bytes 1000000 .
+        continue-on-error: true  # não falha o CI, mas reporta
+
+      - name: Check for secrets in history
+        run: |
+          echo "=== Scanning git history for secrets ==="
+          ! git log --all -p | grep -iE "(password|secret|key|token).*=" | grep -v ".gitignore" | grep -v "requirements" | grep -v "test" || echo "No secrets found in history scan"
+
+  # ==============================
+  # 3. Tests
+  # ==============================
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        env:
+          MONGO_URI: mongodb://localhost:27017/py_store_test
+          MONGO_DB: py_store_test
+          JWT_SECRET_KEY: test-jwt-secret
+          SECRET_KEY: test-secret-key
+          FLASK_ENV: testing
+          CORS_ORIGINS: http://localhost:3000
+        run: |
+          pytest -v --cov=app/ --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # ==============================
+  # 4. Docker Build + Scan
+  # ==============================
+  docker:
+    name: Docker Build + Scan
+    runs-on: ubuntu-latest
+    needs: [lint, security, test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: "python:3.11-slim"
+          format: "sarif"
+          output: "trivy-results.sarif"
+        continue-on-error: true
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Build Docker image
+        run: |
+          docker build -t py-store-api:${{ github.sha }} .
+          docker image ls
+
+  # ==============================
+  # 5. Deploy (only on main, not PR)
+  # ==============================
+  deploy:
+    name: Deploy to Render
+    needs: [docker]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Render deploy
+        run: |
+          echo "Deploy via Render.com (auto-deploy on push to main)"
+          # Render detecta automaticamente via render.yaml

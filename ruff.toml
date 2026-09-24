@@ -1,0 +1,50 @@
+# ==============================
+# Ruff configuration — PyStore API
+# ==============================
+# Security Champion Note:
+# Ruff combina linting (flake8, pycodestyle, etc.) + formatting (black).
+# Configurado para Python 3.11+.
+
+target-version = "py311"
+line-length = 100
+indent-width = 4
+
+[lint]
+# Regras de qualidade e seguranca
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear (security)
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "UP",   # pyupgrade
+    "RUF",  # ruff-specific
+    "S",    # flake8-bandit (security)
+]
+
+# Regras de seguranca mais estrictas
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "B008",    # function call in default argument
+    "S101",    # assert usage (permissivel em testes)
+    "S301",    # pickle (nao usado)
+    "S311",    # random (nao critic para dev)
+    "SIM102",  # nested if
+    "SIM105",  # contextlib.suppress
+    "UP007",   # X | Y union (compat)
+    "UP035",   # deprecated typing
+]
+
+[lint.per-file-ignores]
+# Testes tem mais flexibilidade
+"tests/**" = ["S101", "S105", "S106", "S107", "B017", "B008"]
+
+[lint.isort]
+known-first-party = ["app"]
+known-third-party = ["flask", "pydantic", "bson", "bcrypt", "pymongo"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

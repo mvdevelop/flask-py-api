@@ -75,6 +75,12 @@ class DevelopmentConfig(Config):
     FLASK_ENV = "development"
 
 
+class TestingConfig(Config):
+    DEBUG = True
+    TESTING = True
+    FLASK_ENV = "testing"
+
+
 class ProductionConfig(Config):
     DEBUG = False
     FLASK_ENV = "production"
@@ -82,6 +88,7 @@ class ProductionConfig(Config):
 
 config = {
     "development": DevelopmentConfig,
+    "testing": TestingConfig,
     "production": ProductionConfig,
     "default": ProductionConfig,
 }

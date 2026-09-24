@@ -1,0 +1,59 @@
+# ==============================
+# Pre-commit hooks — PyStore API
+# ==============================
+# Security Champion Note:
+# Garante quality gates antes do commit:
+# - ruff: linting + formatting
+# - mypy: type checking
+# - bandit: security scan leve
+# - secret scanner: detecta secrets antes de commitar
+
+repos:
+  # Linting + Formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        args: [--ignore-missing-imports, --strict-optional]
+        files: ^app/.*\.py$
+
+  # Security scan (Python AST)
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        args: [-r, app/, --skip=B101,B311]
+        files: ^app/.*\.py$
+
+  # Secret scanner — detecta secrets antes de commitar
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.1
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: tests/
+
+  # Detecta arquivos adicionados por acidente
+  - repo: https://github.com/github/docsearch-precommit
+    rev: v3.0.0
+    hooks:
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+
+# Roda apenas se houver arquivos a serem commitados
+exclude: |
+  (?x)^(
+      |venv/
+      |.venv/
+      |node_modules/
+      |__pycache__/
+      |.git/
+  )$

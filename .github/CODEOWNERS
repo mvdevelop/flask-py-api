@@ -1,0 +1,27 @@
+# Security Champion: mvdevelop (marcosvmdilly@gmail.com)
+# Code review obrigatório para:
+# - Arquivos de configuração de segurança
+# - Controllers
+# - Models
+# - Schemas
+# - Testes
+
+# Configurações críticas
+config.py @mvdevelop
+.env @mvdevelop
+
+# Código de segurança
+app/middlewares/ @mvdevelop
+app/security_headers.py @mvdevelop
+
+# Controllers e Models
+app/controllers/ @mvdevelop
+app/models/ @mvdevelop
+app/schemas.py @mvdevelop
+
+# Testes
+tests/ @mvdevelop
+
+# Deploy
+Dockerfile @mvdevelop
+render.yaml @mvdevelop
