@@ -2,61 +2,236 @@
   "swagger": "2.0",
   "info": {
     "title": "PyStore API",
+    "description": "API Flask para gerenciamento de produtos e usuários — versão segura.",
     "version": "1.0.0",
-    "description": "API Flask para gerenciamento de produtos"
+    "contact": {
+      "name": "mvdevelop"
+    }
   },
-
+  "host": "localhost:5000",
   "basePath": "/api",
+  "schemes": ["http"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
-
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "JWT Token — use 'Bearer <token>'"
+    }
+  },
   "paths": {
     "/produtos": {
       "get": {
-        "summary": "Lista produtos",
+        "summary": "Lista produtos (admin)",
+        "security": [{"Bearer": []}],
         "responses": {
           "200": {
-            "description": "Lista de produtos",
+            "description": "Lista paginada de produtos",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "_id": { "type": "string" },
-                  "nome": { "type": "string" },
-                  "descricao": { "type": "string" },
-                  "img": { "type": "string" }
+              "type": "object",
+              "properties": {
+                "count": {"type": "integer"},
+                "products": {
+                  "type": "array",
+                  "items": {"$ref": "#/definitions/Product"}
                 }
               }
             }
-          }
+          },
+          "401": {"description": "Não autorizado"},
+          "403": {"description": "Acesso negado"}
         }
       },
       "post": {
-        "summary": "Cria produto",
-        "description": "Cria novo produto com URL da imagem",
+        "summary": "Cria produto (admin)",
+        "security": [{"Bearer": []}],
         "parameters": [
           {
             "in": "body",
             "name": "body",
             "required": true,
-            "schema": {
-              "type": "object",
-              "required": ["nome"],
-              "properties": {
-                "nome": { "type": "string" },
-                "descricao": { "type": "string" },
-                "image_url": { "type": "string" }
-              }
-            }
+            "schema": {"$ref": "#/definitions/ProductCreate"}
           }
         ],
         "responses": {
-          "201": {
-            "description": "Produto criado"
-          },
-          "400": {
-            "description": "Dados inválidos"
+          "201": {"description": "Produto criado", "schema": {"$ref": "#/definitions/Product"}},
+          "400": {"description": "Dados inválidos"}
+        }
+      }
+    },
+    "/produtos/{id}": {
+      "get": {
+        "summary": "Busca produto por ID (admin)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "type": "string"}
+        ],
+        "responses": {
+          "200": {"description": "Produto", "schema": {"$ref": "#/definitions/Product"}},
+          "404": {"description": "Produto não encontrado"}
+        }
+      },
+      "put": {
+        "summary": "Atualiza produto (admin)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "type": "string"},
+          {"in": "body", "name": "body", "required": true, "schema": {"$ref": "#/definitions/ProductUpdate"}}
+        ],
+        "responses": {
+          "200": {"description": "Produto atualizado", "schema": {"$ref": "#/definitions/Product"}},
+          "400": {"description": "Dados inválidos"},
+          "404": {"description": "Produto não encontrado"}
+        }
+      },
+      "delete": {
+        "summary": "Deleta produto (admin)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "type": "string"}
+        ],
+        "responses": {
+          "200": {"description": "Produto deletado"},
+          "404": {"description": "Produto não encontrado"}
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "Lista usuários",
+        "responses": {
+          "200": {"description": "Lista de usuários"}
+        }
+      },
+      "post": {
+        "summary": "Cria usuário",
+        "parameters": [
+          {"in": "body", "name": "body", "required": true, "schema": {"$ref": "#/definitions/UserCreate"}}
+        ],
+        "responses": {
+          "201": {"description": "Usuário criado"},
+          "400": {"description": "Dados inválidos"}
+        }
+      }
+    },
+    "/users/{id}": {
+      "put": {
+        "summary": "Atualiza usuário",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "type": "string"},
+          {"in": "body", "name": "body", "required": true, "schema": {"$ref": "#/definitions/UserUpdate"}}
+        ],
+        "responses": {
+          "200": {"description": "Usuário atualizado"},
+          "404": {"description": "Usuário não encontrado"}
+        }
+      },
+      "delete": {
+        "summary": "Deleta usuário",
+        "parameters": [
+          {"name": "id", "in": "path", "required": true, "type": "string"}
+        ],
+        "responses": {
+          "200": {"description": "Usuário deletado"}
+        }
+      }
+    },
+    "/user_admin/login": {
+      "post": {
+        "summary": "Login admin",
+        "parameters": [
+          {"in": "body", "name": "body", "required": true, "schema": {"$ref": "#/definitions/AdminLogin"}}
+        ],
+        "responses": {
+          "200": {"description": "Token JWT retornado", "schema": {"$ref": "#/definitions/LoginResponse"}},
+          "401": {"description": "Credenciais inválidas"},
+          "429": {"description": "Muitas tentativas"}
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {"description": "Service healthy"},
+          "503": {"description": "Service unhealthy"}
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Product": {
+      "type": "object",
+      "properties": {
+        "_id": {"type": "string"},
+        "nome": {"type": "string"},
+        "descricao": {"type": "string"},
+        "img": {"type": "string"},
+        "preco": {"type": "number"},
+        "categoria": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "active": {"type": "boolean"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "updated_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "ProductCreate": {
+      "type": "object",
+      "required": ["nome", "descricao"],
+      "properties": {
+        "nome": {"type": "string", "maxLength": 200},
+        "descricao": {"type": "string", "maxLength": 2000},
+        "image_url": {"type": "string", "format": "uri"},
+        "preco": {"type": "number", "minimum": 0},
+        "categoria": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "ProductUpdate": {
+      "type": "object",
+      "properties": {
+        "nome": {"type": "string", "maxLength": 200},
+        "descricao": {"type": "string", "maxLength": 2000},
+        "image_url": {"type": "string", "format": "uri"},
+        "preco": {"type": "number", "minimum": 0},
+        "categoria": {"type": "string"},
+        "tags": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "UserCreate": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "maxLength": 200}
+      }
+    },
+    "UserUpdate": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "maxLength": 200}
+      }
+    },
+    "AdminLogin": {
+      "type": "object",
+      "required": ["email", "password"],
+      "properties": {
+        "email": {"type": "string", "format": "email"},
+        "password": {"type": "string"}
+      }
+    },
+    "LoginResponse": {
+      "type": "object",
+      "properties": {
+        "token": {"type": "string"},
+        "expires_in": {"type": "integer"},
+        "admin": {
+          "type": "object",
+          "properties": {
+            "id": {"type": "string"},
+            "email": {"type": "string"}
           }
         }
       }

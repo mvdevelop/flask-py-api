@@ -1,5 +1,4 @@
-
-version: '3.8'
+version: "3.8"
 
 services:
   api:
@@ -9,16 +8,28 @@ services:
       - "5000:5000"
     volumes:
       - ./uploads:/app/uploads
-      - ./app:/app/app  # Para desenvolvimento
+      # NÃO monta código em prod — apenas em dev
+      # - ./app:/app/app
+    env_file:
+      - .env  # .env NÃO é commitado — seguro
     environment:
-      - MONGO_URI=${MONGO_URI}
-      - MONGO_DB=${MONGO_DB}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_ENV=production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      
+
+  # MongoDB local para desenvolvimento
+  mongodb:
+    image: mongo:7
+    container_name: py-store-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

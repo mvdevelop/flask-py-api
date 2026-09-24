@@ -1,46 +1,71 @@
-
-# Ambiente virtual
-venv/
-.venv/
-env/
-
-# Cache Python
+# ==============================
+# Python
+# ==============================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
 .python-version
 
+# ==============================
+# Virtual environments
+# ==============================
+venv/
+.venv/
+env/
+ENV/
+
+# ==============================
 # IDE
+# ==============================
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Sistema
+*.sublime-workspace
 .DS_Store
 Thumbs.db
 
+# ==============================
 # Logs
+# ==============================
 *.log
 logs/
+.pytest_cache/
+.mypy_cache/
 
-# Arquivos de ambiente
+# ==============================
+# Test coverage
+# ==============================
+.coverage
+htmlcov/
+.tox/
+.coverage.*
+cache/
+
+# ==============================
+# Environment files (CRITICAL: never commit .env)
+# ==============================
 .env
 .env.local
 .env.*.local
 
-# Testes
-test/
-tests/
-*.test.py
-
-# Uploads locais (mantemos vazio no container)
+# ==============================
+# Uploads
+# ==============================
 uploads/**          # Importante: não copiar uploads locais
 !uploads/produtos/  # Mas cria a estrutura de pastas
 
-# Adicione estas linhas
+# ==============================
+# Build artifacts
+# ==============================
 api/index.py
-vercel.json
 .vercel/
 .vercel
+*.pyc
+__pycache__/

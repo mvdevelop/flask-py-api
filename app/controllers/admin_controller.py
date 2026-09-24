@@ -1,41 +1,35 @@
+"""
+AdminController — autenticação e autorização.
+Security Champion Note:
+- bcrypt para password hashing (CWE-916)
+- Rate limiting no login (CWE-307)
+- Log de auditoria sem PII (CWE-532)
+- Mensagens genéricas (CWE-204)
+"""
 from flask import request, jsonify
 from flask_jwt_extended import create_access_token
+from datetime import timedelta
 import bcrypt
 from app.models.admin_model import AdminModel
 from app.schemas import AdminLoginSchema
+from app.middlewares.rate_limit import rate_limit, clear_rate_limit
 from pydantic import ValidationError
 import logging
-import time
 
 logger = logging.getLogger(__name__)
 
-# Rate limiting simples — em memória (produção usar Redis)
-# CWE-307 fix: previne brute force no /login
-_login_attempts = {}
+# Configurações de rate limit
 MAX_LOGIN_ATTEMPTS = 5
-LOCKOUT_DURATION = 300  # 5 minutos
+LOGIN_WINDOW_SECONDS = 300  # 5 minutos
 
 
 class AdminController:
 
     @staticmethod
+    @rate_limit(limit=MAX_LOGIN_ATTEMPTS, window=LOGIN_WINDOW_SECONDS, scope="login")
     def login():
-        """Login admin — validado + rate limited (CWE-307 CWE-20)."""
+        """Login admin — validado + rate limited (CWE-307, CWE-20)."""
         client_ip = request.remote_addr or "unknown"
-
-        # Rate limiting — checa tentativas falhas recentes
-        now = time.time()
-        attempts = _login_attempts.get(client_ip, [])
-
-        # Remove tentativas fora do window de lockout
-        attempts = [t for t in attempts if now - t < LOCKOUT_DURATION]
-        _login_attempts[client_ip] = attempts
-
-        if len(attempts) >= MAX_LOGIN_ATTEMPTS:
-            logger.warning(f"Tentativa de login bloqueada para IP: {client_ip}")
-            return jsonify({
-                "error": "Muitas tentativas falhas. Tente novamente em alguns minutos."
-            }), 429
 
         data = request.get_json()
         if not data:
@@ -50,42 +44,44 @@ class AdminController:
         admin = AdminModel.find_by_email(schema.email)
 
         if not admin:
-            # Registra tentativa falha
-            _login_attempts.setdefault(client_ip, []).append(now)
-            # Mensagem genérica (CWE-204 — não revela se email existe)
+            # Mensagem genérica — não revela se email existe (CWE-204)
+            logger.info(f"Login falhou | ip={client_ip[:8]}... | motivo=usuario_nao_encontrado")
             return jsonify({"error": "Credenciais inválidas"}), 401
 
-        # Verifica senha com bcrypt (constant-time)
+        # Verifica senha com bcrypt (constant-time) (CWE-916)
         try:
             password_valid = bcrypt.checkpw(
                 schema.password.encode("utf-8"),
                 admin["password"],
             )
         except (ValueError, TypeError):
-            _login_attempts.setdefault(client_ip, []).append(now)
+            logger.info(f"Login falhou | ip={client_ip[:8]}... | motivo=hash_invalido")
             return jsonify({"error": "Credenciais inválidas"}), 401
 
         if not password_valid:
-            _login_attempts.setdefault(client_ip, []).append(now)
+            logger.info(f"Login falhou | ip={client_ip[:8]}... | motivo=senha_incorreta")
             return jsonify({"error": "Credenciais inválidas"}), 401
 
-        # Limpa tentativas em caso de sucesso
-        _login_attempts.pop(client_ip, None)
+        # Sucesso — limpa rate limit deste IP
+        clear_rate_limit(client_ip, scope="login")
 
+        # Cria token JWT com claims mínimas, expiração curta
         token = create_access_token(
             identity=str(admin["_id"]),
             additional_claims={"role": "admin"},
-            expires_delta=False,  # Usando config global
+            expires_delta=timedelta(hours=1),
         )
 
         # Log de auditoria — sem PII (CWE-532)
+        # Hash truncado do admin_id para correlação sem exposição
         logger.info(
-            f"Login admin bem-sucedido | admin_id={admin['_id'][:8]}... | ip={client_ip[:8]}..."
+            f"Login admin OK | admin_id={admin['_id'][:8]}... | ip={client_ip[:8]}..."
         )
 
         return jsonify({
             "token": token,
-            "expires_in": 3600,  # 1 hora (config JWT_ACCESS_TOKEN_EXPIRES)
+            "expires_in": 3600,  # 1 hora
+            "token_type": "Bearer",
             "admin": {
                 "id": str(admin["_id"]),
                 "email": admin["email"],

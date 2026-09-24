@@ -2,16 +2,20 @@
 # Application Factory — PyStore API
 # ==============================
 # Security Champion Note:
-# Esta factory sigue princípios de fail-fast e defesa em profundidade:
-# 1. Segredos vêm exclusivamente de environment variables (CWE-798)
-# 2. CORS restrito a origens específicas (CWE-306)
-# 3. Health check expõe apenas informações mínimas (CWE-200)
-# 4. Segredos não são logados (CWE-532)
+# Esta factory implementa defesa em profundidade:
+# 1. Fail-fast security — segredos do environment (CWE-798)
+# 2. CORS restrito (CWE-306)
+# 3. Security headers + CSP (CWE-79, CWE-1021)
+# 4. Rate limiting global (CWE-307, CWE-770)
+# 5. Error handling sem vazamento (CWE-209)
+# 6. Health check minimal disclosure (CWE-200)
+# 7. Logging estruturado sem PII (CWE-532)
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 import os
 import logging
+import datetime
 from config import config
 
 # Logging estruturado (evita print() — CWE-532)
@@ -57,11 +61,9 @@ def create_app(config_name: str = "default") -> Flask:
     # ==============================
     cors_origins = app.config.get("CORS_ORIGINS", [])
     if not cors_origins or cors_origins == [""]:
-        # Em desenvolvimento, permite localhost
         if app.config.get("FLASK_ENV") == "development":
             cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
         else:
-            # Em produção, NENHUMA origem por padrão — exige configuração
             cors_origins = []
             logger.warning("CORS_ORIGINS não configurada — API será inacessível via browser até configurado")
 
@@ -79,6 +81,14 @@ def create_app(config_name: str = "default") -> Flask:
     logger.info(f"CORS configurado para origens: {cors_origins}")
 
     # ==============================
+    # Security Headers Middleware (CWE-79, CWE-1021, CWE-430)
+    # ==============================
+    from app.middlewares.security_headers import init_security_headers, init_error_handler
+
+    init_security_headers(app)
+    init_error_handler(app)
+
+    # ==============================
     # MongoDB
     # ==============================
     mongo_uri = app.config.get("MONGO_URI")
@@ -92,8 +102,13 @@ def create_app(config_name: str = "default") -> Flask:
     try:
         from pymongo import MongoClient
 
-        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        # Ping — falha rápido se DB inacessível
+        client = MongoClient(
+            mongo_uri,
+            serverSelectionTimeoutMS=5000,
+            maxPoolSize=50,
+            minPoolSize=5,
+            appname="PyStore-API",
+        )
         client.admin.command("ping")
 
         db_name = app.config.get("MONGO_DB", "py_store")
@@ -109,8 +124,6 @@ def create_app(config_name: str = "default") -> Flask:
     # ==============================
     # Rotas básicas
     # ==============================
-    import datetime
-
     @app.route("/", methods=["GET"])
     def index():
         return jsonify({
@@ -121,10 +134,10 @@ def create_app(config_name: str = "default") -> Flask:
 
     @app.route("/health", methods=["GET"])
     def health():
-        # Mínima disclosure (CWE-200 fix) — não expõe detalhes de infra
-        db_status = "connected" if app.db else "disconnected"
+        # Mínima disclosure (CWE-200 fix)
+        status = "healthy" if app.db else "unhealthy"
         return jsonify({
-            "status": "healthy" if app.db else "unhealthy",
+            "status": status,
             "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         }), 200 if app.db else 503
 
